@@ -1,15 +1,21 @@
-typedef enum type_op : u32
+typedef enum type_op
 {
-	Op_none,
+	Op_None,
 	Op_mov,
 } type_op;
 
-typedef enum type_bit : u32
+char* op_names[2] = {
+	"non",
+	"mov",
+};
+
+typedef enum type_bit
 {
 	Bit_End,
 	Bit_Literal,
 	Bit_D,
 	Bit_W,
+	Bit_S,
 	Bit_MOD,
 	Bit_REG,
 	Bit_RM,
@@ -88,6 +94,29 @@ enum registers
 	Register_ds,
 };
 
+char* register_names[20] = {
+	"al",
+	"cl",
+	"dl",
+	"bl",
+	"ah",
+	"ch",
+	"dh",
+	"bh",
+	"ax",
+	"cx",
+	"dx",
+	"bx",
+	"sp",
+	"bp",
+	"si",
+	"di",
+	"es",
+	"cs",
+	"ss",
+	"ds",
+};
+
 typedef struct register_access
 {
 	enum registers	index;
@@ -96,7 +125,7 @@ typedef struct register_access
 typedef struct effective_address_term
 {
 	register_access reg;
-	s16				scale;
+	i16				scale;
 } effective_address_term;
 
 typedef struct effective_address
@@ -140,7 +169,6 @@ enum instruction_flag
 
 typedef struct instruction
 {
-	u16		size;
 	type_op	op;
 	u16		flags;
 

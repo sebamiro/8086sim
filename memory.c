@@ -29,7 +29,7 @@ u8 memory_access_bits_u8(memory_access* m, u8 count) {
 	assert(count <= 8 - m->off);
 	u8 res;
 
-	res = (m->mem->buf[m->cur] << m->off) >> (8 - count);
+	res = (m->mem->buf[m->cur] & (0xFF >> m->off)) >> (8 - m->off - count);
 	m->off += count;
 	if (m->off >= 8)
 	{
