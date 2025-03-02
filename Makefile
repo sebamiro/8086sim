@@ -2,7 +2,7 @@ NAME=decode
 TEST_DIR=tests
 
 all:
-	gcc -Wall -Werror -Wextra main.c -o $(NAME)
+	gcc -DDEBUG -Wall -Werror -Wextra main.c -o $(NAME)
 
 test: $(TEST_DIR)/*
 	@for file in $^ ; do \

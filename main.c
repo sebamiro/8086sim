@@ -4,6 +4,11 @@
 #include <stdio.h>
 #include <assert.h>
 
+#ifdef DEBUG
+# undef DEBUG
+# define DEBUG(...) fprintf(stderr, __VA_ARGS__);
+#endif
+
 #include "memory.c"
 #include "decode.c"
 

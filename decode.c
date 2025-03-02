@@ -44,7 +44,7 @@ u16 parse_value(memory_access* at, u8 exists, u8 wide)
 		if (wide)
 		{
 			u8	d2 = memory_access_bits_u8(at, 8);
-			res = (res << 8) | d2;
+			res = (d2 << 8) | res;
 		}
 	}
 	return res;
@@ -90,9 +90,10 @@ instruction try_decode_instruction(memory_access* at, instruction_encoding* inst
 	u8 has_direct_address = ((mod == 0b00) && (rm == 0b110));
 	has[Bit_Disp] = ((has[Bit_Disp]) || (mod == 0b01) || (mod == 0b10) || has_direct_address);
 
+	u8 displacement_is_w = (has[Bit_Disp_W] || (mod == 0b10) || has_direct_address);
 	u8 data_is_w = (!s && w);
 
-	bits[Bit_Disp] |= parse_value(at, has[Bit_Disp], 1);
+	bits[Bit_Disp] |= parse_value(at, has[Bit_Disp], displacement_is_w);
 	bits[Bit_Data] |= parse_value(at, has[Bit_Data], data_is_w);
 
 	res.op = inst->op;
@@ -119,7 +120,7 @@ instruction try_decode_instruction(memory_access* at, instruction_encoding* inst
 	{
 		if (mod == 0b11)
 		{
-			*mod_operand = operand_register(rm& 0x7, w, 0);
+			*mod_operand = operand_register(rm & 0x7, w, 0);
 		}
 		else
 		{
@@ -127,7 +128,14 @@ instruction try_decode_instruction(memory_access* at, instruction_encoding* inst
 			enum registers terms1[8] = {Register_si, Register_di, Register_si, Register_di};
 
 			u8 i = rm & 0x07;
-			*mod_operand = operand_memory(terms0[i], terms1[i], displacement);
+			enum registers term0 = terms0[i];
+			enum registers term1 = terms1[i];
+			if ((mod == 0b00) && (rm == 0b110))
+			{
+				term0 = 0;
+				term1 = 0;
+			}
+			*mod_operand = operand_memory(term0, term1, displacement);
 		}
 	}
 
@@ -151,10 +159,31 @@ void print_instuction(instruction inst)
 				fprintf(stdout, "%s", register_names[operand.register_access.index]);
 				break;
 			case Operand_Memory:
-				fprintf(stdout, "AA");
+				fprintf(stdout, "[");
+				if (operand.address.terms[0].reg.index != 0)
+				{
+					fprintf(stdout, "%s", register_names[operand.address.terms[0].reg.index]);
+				}
+				if (operand.address.terms[1].reg.index != 0)
+				{
+					fprintf(stdout, " + %s", register_names[operand.address.terms[1].reg.index]);
+				}
+				if (operand.address.displacement != 0)
+				{
+					if (operand.address.terms[0].reg.index != 0)
+					{
+						fprintf(stdout, " + ");
+					}
+					fprintf(stdout, "%d", operand.address.displacement);
+				}
+				fprintf(stdout, "]");
 				break;
 			case Operand_Inmediate:
-				fprintf(stdout, "SS");
+				if (inst.operands[0].typ != Operand_Register)
+				{
+					fprintf(stdout, "%s ", inst.flags & Inst_Wide ? "word" : "byte");
+				}
+				fprintf(stdout, "%d", operand.inmediate.count);
 				break;
 			default:
 				fprintf(stdout, "OO");
@@ -167,30 +196,27 @@ void decode(Memory* mem)
 {
 	u8 cur = 0;
 
-	u8 test = 0b11010111;
-	u8 res = (test & (0xFF >> 2)) >> (3);
-	assert(res == 2);
-	res = (test & (0xFF >> 6)) >> (1);
-	assert(res == 1);
-	res = (0b10001011 & (0xFF >> 0)) >> (8 - 0 - 6);
-	assert(res == 0b100010);
-	res = (0b10001011 & (0xFF >> 6)) >> (8 - 6 - 1);
-	assert(res == 0b01);
-
 	while (cur < mem->len)
 	{
-		for (u8 iter_inst = 0; iter_inst < 3; ++iter_inst) {
+		instruction instruction;
+		for (u8 iter_inst = 0; iter_inst < 38; ++iter_inst) {
 			memory_access at = { .mem = mem, .cur = cur, .off = 0 };
 			instruction_encoding inst = instruction_table_8086[iter_inst];
 
-			instruction instruction = try_decode_instruction(&at, &inst);
+			instruction = try_decode_instruction(&at, &inst);
 			if (instruction.op == Op_None)
 			{
 				continue;
 			}
+			instruction.size = at.cur - cur;
+			cur += instruction.size;
 			print_instuction(instruction);
-			cur += at.cur;
 			break;
+		}
+		if (instruction.op == Op_None)
+		{
+			fprintf(stderr, "[ERROR] Unknown instruction\n");
+			return;
 		}
 	}
 }
