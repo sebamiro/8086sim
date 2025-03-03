@@ -1,14 +1,34 @@
 #define MAX_MEMORY 1024 * 1024
 typedef struct Memory {
-	u8	buf[MAX_MEMORY];
-	u8	len;
+	u8		buf[MAX_MEMORY];
+	u16*	registers;
+	u16		cur;
+	u16		len;
 } Memory;
 
+enum index_registers {
+	IndexRegister_Accumulator,
+	IndexRegister_Base,
+	IndexRegister_Count,
+	IndexRegister_Data,
+	IndexRegister_StackPointer,
+	IndexRegister_BasePointer,
+	IndexRegister_SourceIndex,
+	IndexRegister_DestinationIndex,
+	IndexRegister_CodeSegment,
+	IndexRegister_DataSegment,
+	IndexRegister_StackSegment,
+	IndexRegister_ExtraSegment,
+	IndexRegister_IP,
+	IndexRegister_Flags,
+	IndexRegister_Len,
+};
 typedef struct memory_access {
 	Memory*	mem;
-	u8		cur;
-	u8		off;
+	u16		cur;
+	u16		off;
 } memory_access;
+
 
 u8 Memory_load_file(Memory* m, char* file_name)
 {
@@ -19,7 +39,7 @@ u8 Memory_load_file(Memory* m, char* file_name)
 		perror("Loading file:");
 		return 1;
 	}
-	m->len += fread(m->buf, 1, MAX_MEMORY, in);
+	m->len += fread(m->buf + m->cur, 1, MAX_MEMORY, in);
 	fclose(in);
 	return 0;
 }

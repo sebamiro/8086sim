@@ -194,7 +194,7 @@ void print_instuction(instruction inst)
 
 void decode(Memory* mem)
 {
-	u8 cur = 0;
+	u8 cur = mem->cur;
 
 	while (cur < mem->len)
 	{
@@ -211,6 +211,7 @@ void decode(Memory* mem)
 			instruction.size = at.cur - cur;
 			cur += instruction.size;
 			print_instuction(instruction);
+			exec_instruction(mem, instruction);
 			break;
 		}
 		if (instruction.op == Op_None)
