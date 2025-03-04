@@ -39,15 +39,34 @@ enum index_registers register_access_to_index(enum registers val)
 
 u16* get_operand_dest(Memory* mem, operand operand)
 {
-	assert(operand.typ == Operand_Register);
-	u16* reg = &mem->registers[register_access_to_index(operand.register_access.index)];
-	return reg;
+	if (operand.typ == Operand_None)
+	{
+		return NULL;
+	}
+	u16* res = NULL;
+	if(operand.typ == Operand_Register)
+	{
+		res = &mem->registers[register_access_to_index(operand.register_access.index)];
+	}
+	else if(operand.typ == Operand_Memory)
+	{
+		u16 off = operand.address.displacement;
+		for (u8 iter_terms = 0; iter_terms < 2; ++iter_terms)
+		{
+			if (operand.address.terms[iter_terms].reg.index)
+			{
+				off += mem->registers[register_access_to_index(operand.address.terms[iter_terms].reg.index)];
+			}
+		}
+		DEBUG(" LOAD: %d\n", off)
+		res = (u16*)(mem->buf + off);
+	}
+	return res;
 }
 
 u16 get_operand_src_value(Memory* mem, operand operand)
 {
 	assert(operand.typ != Operand_None);
-	assert(operand.typ != Operand_Memory);
 
 	if (operand.typ == Operand_Inmediate)
 	{
@@ -66,6 +85,18 @@ u16 get_operand_src_value(Memory* mem, operand operand)
 		}
 		return src;
 	}
+	else if (operand.typ == Operand_Memory)
+	{
+		u16 off = operand.address.displacement;
+		for (u8 iter_terms = 0; iter_terms < 2; ++iter_terms)
+		{
+			if (operand.address.terms[iter_terms].reg.index)
+			{
+				off += mem->registers[register_access_to_index(operand.address.terms[iter_terms].reg.index)];
+			}
+		}
+		return *(u16*)(mem->buf + off);
+	}
 	return 0;
 }
 
@@ -78,7 +109,10 @@ void exec_instruction(Memory* mem, instruction inst)
 	pointer_des = get_operand_dest(mem, inst.operands[0]);
 	val_src = get_operand_src_value(mem, inst.operands[1]);
 
-	DEBUG("[%s] = 0x%X", register_names[inst.operands[0].register_access.index], *pointer_des)
+	if (inst.operands[0].typ != Op_None)
+	{
+		DEBUG("[%s] = 0x%X", register_names[inst.operands[0].register_access.index], *pointer_des)
+	}
 	switch (inst.op)
 	{
 		case Op_mov:
@@ -159,10 +193,31 @@ void exec_instruction(Memory* mem, instruction inst)
 			}
 			break;
 		}
+		case Op_je:
+		{
+			if (mem->registers[IndexRegister_Flags] & Flag_Zero)
+			{
+				mem->registers[IndexRegister_IP] += (i8)val_src;
+			}
+			break;
+		}
+		case Op_jne:
+		{
+			if (~mem->registers[IndexRegister_Flags] & Flag_Zero)
+			{
+				mem->registers[IndexRegister_IP] += (i8)val_src;
+			}
+			break;
+		}
 		default:
 			DEBUG("NOT IMPLEMENTED EXECUTE\n")
 	}
-	DEBUG(" -> 0x%X", *pointer_des)
+
+	if (pointer_des)
+	{
+		DEBUG(" -> 0x%X", *pointer_des)
+	}
+	DEBUG("; ip: 0x%X", mem->registers[IndexRegister_IP])
 	if (mem->registers[IndexRegister_Flags] & Flag_Sign)
 	{
 		DEBUG(" FlagSign");

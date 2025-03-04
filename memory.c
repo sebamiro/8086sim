@@ -1,7 +1,7 @@
 #define MAX_MEMORY 1024 * 1024
 typedef struct Memory {
 	u8		buf[MAX_MEMORY];
-	u16*	registers;
+	u16		registers[14];
 	u16		cur;
 	u16		len;
 } Memory;

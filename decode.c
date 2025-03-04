@@ -194,13 +194,11 @@ void print_instuction(instruction inst)
 
 void decode(Memory* mem)
 {
-	u8 cur = mem->cur;
-
-	while (cur < mem->len)
+	while (mem->registers[IndexRegister_IP] < mem->len)
 	{
 		instruction instruction;
 		for (u8 iter_inst = 0; iter_inst < 38; ++iter_inst) {
-			memory_access at = { .mem = mem, .cur = cur, .off = 0 };
+			memory_access at = { .mem = mem, .cur = mem->registers[IndexRegister_IP], .off = 0 };
 			instruction_encoding inst = instruction_table_8086[iter_inst];
 
 			instruction = try_decode_instruction(&at, &inst);
@@ -208,8 +206,8 @@ void decode(Memory* mem)
 			{
 				continue;
 			}
-			instruction.size = at.cur - cur;
-			cur += instruction.size;
+			instruction.size = at.cur - mem->registers[IndexRegister_IP];
+			mem->registers[IndexRegister_IP] += instruction.size;
 			print_instuction(instruction);
 			exec_instruction(mem, instruction);
 			break;
