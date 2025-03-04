@@ -115,6 +115,7 @@ instruction_encoding instruction_table_8086[] =
 	{Op_mov, { B(1011), W, REG, DATA, ImpD(1) } },
 	{Op_mov, { B(1010000), W, ADDR, ImpREG(0), ImpMOD(0), ImpRM(0b110), ImpD(1) } },
 	{Op_mov, { B(1010001), W, ADDR, ImpREG(0), ImpMOD(0), ImpRM(0b110), ImpD(0) } },
+	{Op_mov, { B(100011), D, B(0), MOD, B(0), SR, RM, ImpW(1) } },
 
 	{Op_add, { B(000000), D, W, MOD, REG, RM } },
 	{Op_add, { B(100000), S, W, MOD, B(000), RM, DATA, ImpD(0) } },

@@ -23,6 +23,10 @@ enum index_registers {
 	IndexRegister_Flags,
 	IndexRegister_Len,
 };
+enum flags {
+	Flag_Zero = 0x1,
+	Flag_Sign = 0x2,
+};
 typedef struct memory_access {
 	Memory*	mem;
 	u16		cur;

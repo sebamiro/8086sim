@@ -8,7 +8,7 @@ operand operand_register(u8 reg, u8 w, u8 s)
 	}
 	if (s)
 	{
-		// reg &= 0x10;
+		reg |= 0b10000;
 	}
 	res.typ = Operand_Register;
 	res.register_access.index = reg;
